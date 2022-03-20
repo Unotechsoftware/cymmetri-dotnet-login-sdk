@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFrameworks>netstandard2.1;net45</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>com.cymmetri.login.sdk</PackageId>
+    <Authors>Abhishek Kulkarni</Authors>
+    <Company>Unotech Software</Company>
+    <Product>Cymmetri</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>2022</Copyright>
+    <PackageIcon>Cymmetri.png</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl>https://github.com/Unotechsoftware/cymmetri-dotnet-login-sdk</RepositoryUrl>
+    <Version>0.0.1.6</Version>
+    <PackageTags>Login;SDK;Cymmetri;dotnet;core;nuget</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.1" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\Downloads\Cymmetri.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
