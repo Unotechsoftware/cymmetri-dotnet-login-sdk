@@ -16,6 +16,9 @@ namespace CymmetriLoginSDKLibrary21
         public string baseUrl { get; set; }
         public string tenant { get; set; }
 
+        public string username { get; set; }
+
+        public string currentToken { get; set; }
         //Example: baseUrl = https://box.cymmetri.in/
         //Example: tenant = box
         public LoginInstance(string baseUrl)
@@ -58,6 +61,7 @@ namespace CymmetriLoginSDKLibrary21
             var result = domainValidation.MakeRequest();
             result.Wait();
             DomainValidationResponse response = JsonConvert.DeserializeObject<DomainValidationResponse>(result.Result);
+            tenant = response.data.tenantId;
             return response;
         }
 
@@ -105,6 +109,42 @@ namespace CymmetriLoginSDKLibrary21
             var result = validateUser.MakeRequest(username);
             result.Wait();
             ValidateUserResponse response = JsonConvert.DeserializeObject<ValidateUserResponse>(result.Result);
+            this.username = username;
+            return response;
+        }
+
+        /*
+         * 
+         * 
+         * curl 'https://demo191.cymmetri.in/authsrvc/auth/token' \
+  -H 'Connection: keep-alive' \
+  -H 'sec-ch-ua: " Not A;Brand";v="99", "Chromium";v="99", "Microsoft Edge";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46' \
+  -H 'tenant: demo191' \
+  -H 'content-type: application/json' \
+  -H 'Accept: application/json' \
+  -H 'user: admin' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'Origin: https://demo191.cymmetri.in' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://demo191.cymmetri.in/' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  -H 'Cookie: deviceId=d6b007e0-3a72-4955-b765-52d428a22527; app_73e5c5f8-276b-47bb-a6a5-b6f82a779d79=e689a8da-faa7-46f5-9c7a-2800abdd206a; device=a9869200-a86f-11ec-ab71-d196abb3a0e7; Correlation=E2A85E5CBFA7469091E77E763CA08390' \
+  --data-raw '{"login":"admin","password":"U2FsdGVkX1/3znoNq5bbvkguYw+/9LPkjkuy5ORlhhI="}' \
+  --compressed
+         * 
+         */
+        public PasswordValidationResponse ValidatePassword(string password)
+        {
+            var enc_pass = GetEncryptedUser(username, password);
+            var validatePassword = new ValidatePassword(httpClient);
+            var result = validatePassword.MakeRequest(username, enc_pass);
+            result.Wait();
+            PasswordValidationResponse response = JsonConvert.DeserializeObject<PasswordValidationResponse>(result.Result);
+            this.currentToken = response.data.token;
             return response;
         }
     }
