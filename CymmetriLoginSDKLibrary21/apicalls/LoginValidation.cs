@@ -47,7 +47,7 @@ namespace CymmetriLoginSDKLibrary21.apicalls
 
         public HttpClient httpClient { get; set; }
         public Uri baseAddress { get; set; }
-        public StringContent GetJsonRequest()
+        private StringContent GetJsonRequest()
         {
             var domain = baseAddress.Host;
             var requestData = new DomainValidationRequest(domain);
@@ -57,7 +57,7 @@ namespace CymmetriLoginSDKLibrary21.apicalls
             return data;
         }
 
-        public void SetClientHeaders()
+        private void SetClientHeaders()
         {
             var headerReferer = baseAddress.AbsoluteUri;
             var headerOrigin = headerReferer.Remove(headerReferer.Length - 1, 1);

@@ -12,7 +12,7 @@
     <PackageIcon>Cymmetri.png</PackageIcon>
     <PackageIconUrl />
     <RepositoryUrl>https://github.com/Unotechsoftware/cymmetri-dotnet-login-sdk</RepositoryUrl>
-    <Version>0.0.1.6</Version>
+    <Version>0.0.1.7</Version>
     <PackageTags>Login;SDK;Cymmetri;dotnet;core;nuget</PackageTags>
   </PropertyGroup>
 
