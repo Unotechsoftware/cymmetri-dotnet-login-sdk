@@ -16,6 +16,10 @@ namespace CymmetriLoginSDKLibrary21
         public string baseUrl { get; set; }
         public string tenant { get; set; }
 
+        public bool isError { get; set; }
+
+        public bool isFinalStep { get; set; }
+        public bool isComplete { get; set; }
         public string username { get; set; }
 
         public string currentToken { get; set; }
@@ -23,6 +27,9 @@ namespace CymmetriLoginSDKLibrary21
         //Example: tenant = box
         public LoginInstance(string baseUrl)
         {
+            this.isComplete = false;
+            this.isFinalStep = false;
+            this.isError = false;
             this.baseUrl = baseUrl;
             // initializing as "", because we will get this directly from the domain validation API.
             this.tenant = "";
@@ -144,8 +151,95 @@ namespace CymmetriLoginSDKLibrary21
             var result = validatePassword.MakeRequest(username, enc_pass);
             result.Wait();
             PasswordValidationResponse response = JsonConvert.DeserializeObject<PasswordValidationResponse>(result.Result);
-            this.currentToken = response.data.token;
+            if (response.data.refreshToken.Length > 1)
+            {
+                isFinalStep = true;
+                isComplete = true;
+            } else
+            {
+                if (response.success)
+                {
+                    this.currentToken = response.data.token;
+                } else
+                {
+                    isFinalStep = true;
+                    this.isError = true;
+                }
+            }
+            
             return response;
+        }
+
+        // Two APIs must be called
+        // API 1 - authsrvc/auth/loginFlow
+        // API 2 - authsrvc/auth/registeredFactorsByRule
+        public List<string> GetRegisteredMFAFactors()
+        {
+            var emptyLoginFlowRequest = new EmptyLoginFlowCall(httpClient, currentToken);
+            var result = emptyLoginFlowRequest.MakeRequest();
+            result.Wait();
+            EmptyLoginFlowResponse response = JsonConvert.DeserializeObject<EmptyLoginFlowResponse>(result.Result);
+            if (response.success)
+            {
+                
+                    this.currentToken = response.data.token;
+                    //return response;
+
+                    var mfaRegisteredFactors = new GetRegisteredFactors(httpClient, currentToken);
+                    var result_mfa = mfaRegisteredFactors.MakeRequest();
+                    result_mfa.Wait();
+                    GetRegisteredFactorsResponse response_mfa = JsonConvert.DeserializeObject<GetRegisteredFactorsResponse>(result_mfa.Result);
+                    return response_mfa.data;
+                
+            } else
+            {
+                isError = true;
+                isFinalStep = true;
+                return null;
+            }
+            
+        }
+
+        // Currently Only handles OTP type MFA
+        public LoginFlowResponse SendMFAAsLoginFlowBody(string mfaType, string otp)
+        {
+            var loginFlowWithBody = new LoginFlowWithBody(httpClient, currentToken);
+            var result = loginFlowWithBody.MakeRequest(mfaType, otp);
+            result.Wait();
+            LoginFlowResponse response = JsonConvert.DeserializeObject<LoginFlowResponse>(result.Result);
+            if (response.success)
+            {
+                this.currentToken = response.data.token;
+                return response;
+            }
+            else
+            {
+                isError = true;
+                isFinalStep = true;
+                return null;
+            }
+        }
+
+        // Final MFA Flow Step ideally
+        public MfaFlowResponse CheckMFAFlow()
+        {
+            var mfaFlow = new MfaFlow(httpClient, currentToken);
+            var result = mfaFlow.MakeRequest();
+            result.Wait();
+            MfaFlowResponse response = JsonConvert.DeserializeObject<MfaFlowResponse>(result.Result);
+            if (response.success)
+            {
+
+                isComplete = true;
+                isFinalStep = true;
+                return response;
+            }
+            else
+            {
+                isError = true;
+                isFinalStep = true;
+                return null;
+            }
         }
     }
 }
