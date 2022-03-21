@@ -243,23 +243,23 @@ namespace CymmetriLoginSDKLibrary21
             return response;
         }
 
-        public void Scenario_PasswordBased()
+        public int Scenario_PasswordBased(string Msg, string username, string flow,string password, string otpType, string otp, out string nextStage, out string errorMessage)
         {
-            // Before Form Load -
+            // Before Form Load - "Load"
             // 1. we will assume the baseAddress has already been passed.
             // 2. Validate Domain
             // 3. If domain is not validated. Show error
             // 4. if domain validated, set the correlationcookie
-            // Form Load 1 -
+            // Form Load 1 - "Username"
             // 1. Read Username from form
             // 2. Validate username
             // 3. If username not validated. Show error
             // 4. If username validated proceed to Form 2
-            // Form Load 2 - 
+            // Form Load 2 - "Flow"
             // 1. Read Flow Name
             // 2. If Flow is not "password-based". Show error for now, stating that the flow is not yet supported.
             // 3. If flow is "password-based". Show Form 3
-            // Form Load 3 - 
+            // Form Load 3 - "Password"
             // 1. Read Password
             // 2. Validated Password.
             // 3. If not validated. Show password is wrong error.
@@ -268,26 +268,130 @@ namespace CymmetriLoginSDKLibrary21
             // 6. if MFA needed; check if OTP factors are available.
             // 7. if OTP factors are not available; show error saying that these factors are not yet supported.
             // 8. if OTP factors are available; Show form 4.
-            // Form Load 4 - 
+            // Form Load 4 - "OTP Factor"
             // 1. Show drop down of OTP factors.
             // 2. On Select of OTP factors; Load Form 5
-            // Form Load 5 - 
+            // Form Load 5 - "OTP"
             // 1. Read OTP
             // 2. Validate OTP
             // 3. If OTP not validated; Show error saying that this OTP is incorrect.
             // 4. If OTP validated; Run CheckMFA()
             // 5. If CheckMFA not successful; SHow error saying something went wrong with MFA validation.
             // 6. If checkMFA successful; show submit form.
-            // Submit Form Load -
+            // Submit Form Load - "Submit"
             // 1. Show Login submit button.
             switch (this.scenarioStage)
             {
                 case "Load":
-                    Console.WriteLine("This is the first stage");
-                    break;
+                    var dvr = this.ValidateDomain();
+                    if (dvr.success)
+                    {
+                        this.SetCorrelationCookie();
+                        nextStage = "Username";
+                        errorMessage = "";
+                        return 0;
+                    } else
+                    {
+                        nextStage = "Error";
+                        errorMessage = String.Format("Error in validating domain {0}", this.baseUrl);
+                        return -1;
+                    }
+                case "Username":
+                    var userResponse = this.ValidateUserIdentity(username);
+                    if (userResponse.success)
+                    {
+                        nextStage = "Flow";
+                        errorMessage = "";
+                        return 0;
+                    } else
+                    {
+                        nextStage = "Error";
+                        errorMessage = String.Format("Error in validating user : {0} on domain {1}", username, this.baseUrl);
+                        return -1;
+                    }
+                case "Flow":
+                    if (flow == "passwordbased")
+                    {
+                        nextStage = "Password";
+                        errorMessage = "";
+                        return 0;
+
+                    } else
+                    {
+                        nextStage = "Error";
+                        errorMessage = String.Format("Selected Flow {0} is not supported yet in the SDK.", flow);
+                        return -1;
+                    }
+                case "Password":
+                    var pvr = this.ValidatePassword(password);
+                    if (pvr.success)
+                    {
+                        if (pvr.data.refreshToken != null)
+                        {
+                            // Received refresh Token so close the flow.
+                            nextStage = "Submit";
+                            errorMessage = "";
+                            return 0;
+                        } else
+                        {
+                            nextStage = "OTP Factor";
+                            errorMessage = "";
+                            return 0;
+                            // Not erroneous but should continue with flow.
+                        }
+                    }
+                    else
+                    {
+                        // Password validation failed
+                        nextStage = "Error";
+                        errorMessage = "Password Validation failed for user";
+                        return -1;
+                    }
+                case "OTP Factor":
+                    if (otpType == "CymmetriAuthenticator" || otpType == "GoogleAuthenticator")
+                    {
+                        nextStage = "OTP";
+                        errorMessage = "";
+                        return 0;
+                    }
+                    else
+                    {
+                        nextStage = "Error";
+                        errorMessage = String.Format("{0} is not supported MFA type yet. ", otpType);
+                        return -1;
+                    }
+                case "OTP":
+                    var mfaResp = this.SendMFAAsLoginFlowBody(otpType, otp);
+                    if (mfaResp.success)
+                    {
+                        var mfaCheckResp = this.CheckMFAFlow();
+                        if (mfaCheckResp.success)
+                        {
+                            nextStage = "Submit";
+                            errorMessage = "";
+                            return 0;
+                        } else
+                        {
+                            nextStage = "Error";
+                            errorMessage = "Error in check MFA Flow response";
+                            return -1;
+                        }
+                    } else
+                    {
+                        nextStage = "Error";
+                        errorMessage = String.Format("Error in validating mfa check with OTP as {0} for Type {1}", otp, otpType);
+                        return -1;
+                    }
+                case "Error":
+                    errorMessage = Msg;
+                    nextStage = "Close";
+                    return -1;
                 default:
                     break;
             }
+            errorMessage = "Error in something";
+            nextStage = "Load";
+            return -1;
         }
     }
 }
