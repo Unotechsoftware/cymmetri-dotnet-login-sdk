@@ -15,7 +15,7 @@ namespace CymmetriLoginSDKLibrary21
         public string correlationCookie { get; set; }
         public string baseUrl { get; set; }
         public string tenant { get; set; }
-
+        public string scenarioStage { get; set; }
         public bool isError { get; set; }
 
         public bool isFinalStep { get; set; }
@@ -34,6 +34,7 @@ namespace CymmetriLoginSDKLibrary21
             // initializing as "", because we will get this directly from the domain validation API.
             this.tenant = "";
             this.correlationCookie = "";
+            this.scenarioStage = "Load";
             httpClient.BaseAddress = new Uri(baseUrl);
         }
 
@@ -68,7 +69,10 @@ namespace CymmetriLoginSDKLibrary21
             var result = domainValidation.MakeRequest();
             result.Wait();
             DomainValidationResponse response = JsonConvert.DeserializeObject<DomainValidationResponse>(result.Result);
-            tenant = response.data.tenantId;
+            if (response.success)
+            {
+                tenant = response.data.tenantId;
+            }
             return response;
         }
 
@@ -151,7 +155,7 @@ namespace CymmetriLoginSDKLibrary21
             var result = validatePassword.MakeRequest(username, enc_pass);
             result.Wait();
             PasswordValidationResponse response = JsonConvert.DeserializeObject<PasswordValidationResponse>(result.Result);
-            if (response.data.refreshToken.Length > 1)
+            if (response.data.refreshToken != null)
             {
                 isFinalStep = true;
                 isComplete = true;
@@ -216,7 +220,7 @@ namespace CymmetriLoginSDKLibrary21
             {
                 isError = true;
                 isFinalStep = true;
-                return null;
+                return response;
             }
         }
 
@@ -229,16 +233,60 @@ namespace CymmetriLoginSDKLibrary21
             MfaFlowResponse response = JsonConvert.DeserializeObject<MfaFlowResponse>(result.Result);
             if (response.success)
             {
-
-                isComplete = true;
-                isFinalStep = true;
-                return response;
+                isComplete = true;   
             }
             else
             {
                 isError = true;
-                isFinalStep = true;
-                return null;
+            }
+            isFinalStep = true;
+            return response;
+        }
+
+        public void Scenario_PasswordBased()
+        {
+            // Before Form Load -
+            // 1. we will assume the baseAddress has already been passed.
+            // 2. Validate Domain
+            // 3. If domain is not validated. Show error
+            // 4. if domain validated, set the correlationcookie
+            // Form Load 1 -
+            // 1. Read Username from form
+            // 2. Validate username
+            // 3. If username not validated. Show error
+            // 4. If username validated proceed to Form 2
+            // Form Load 2 - 
+            // 1. Read Flow Name
+            // 2. If Flow is not "password-based". Show error for now, stating that the flow is not yet supported.
+            // 3. If flow is "password-based". Show Form 3
+            // Form Load 3 - 
+            // 1. Read Password
+            // 2. Validated Password.
+            // 3. If not validated. Show password is wrong error.
+            // 4. if Validated; Need to check if this is it; or MFA needed.
+            // 5. if this is it; show submit form.
+            // 6. if MFA needed; check if OTP factors are available.
+            // 7. if OTP factors are not available; show error saying that these factors are not yet supported.
+            // 8. if OTP factors are available; Show form 4.
+            // Form Load 4 - 
+            // 1. Show drop down of OTP factors.
+            // 2. On Select of OTP factors; Load Form 5
+            // Form Load 5 - 
+            // 1. Read OTP
+            // 2. Validate OTP
+            // 3. If OTP not validated; Show error saying that this OTP is incorrect.
+            // 4. If OTP validated; Run CheckMFA()
+            // 5. If CheckMFA not successful; SHow error saying something went wrong with MFA validation.
+            // 6. If checkMFA successful; show submit form.
+            // Submit Form Load -
+            // 1. Show Login submit button.
+            switch (this.scenarioStage)
+            {
+                case "Load":
+                    Console.WriteLine("This is the first stage");
+                    break;
+                default:
+                    break;
             }
         }
     }
