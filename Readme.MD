@@ -22,3 +22,4 @@ Login SDK in dotnet core, that can be directly used from Nuget Package Manager.
 
 ## Important References
 - Reference for crypto-js equivalent Encryption - https://stackoverflow.com/questions/5452422/openssl-encryption-using-net-classes#answer-5454692
+- NuGet Package Link - https://www.nuget.org/packages/com.cymmetri.login.sdk/
